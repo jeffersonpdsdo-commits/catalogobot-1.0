@@ -1,0 +1,23 @@
+{
+  "name": "catalogobot",
+  "version": "1.0.0",
+  "description": "Bot de catálogo automático para WhatsApp — responde clientes com fotos dos produtos 24h por dia",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "multer": "^1.4.5-lts.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": ["whatsapp", "bot", "catalogo", "vendas", "automatico"],
+  "author": "CatálogoBot"
+}

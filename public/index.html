@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CatálogoBot — Painel do Vendedor</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; color: #111; min-height: 100vh; }
+
+  /* TOPBAR */
+  .topbar { background: #075E54; color: white; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .topbar-brand { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 600; }
+  .badge { background: #25D366; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+  .topbar-stats { display: flex; gap: 20px; }
+  .tstat { text-align: center; }
+  .tstat-n { font-size: 18px; font-weight: 700; }
+  .tstat-l { font-size: 10px; opacity: 0.75; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #25D366; display: inline-block; margin-right: 6px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
+
+  /* LAYOUT */
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+  .tabs { display: flex; gap: 0; background: white; border-radius: 12px 12px 0 0; border: 1px solid #e0e0e0; border-bottom: none; overflow: hidden; }
+  .tab-btn { flex: 1; padding: 12px; font-size: 14px; cursor: pointer; border: none; background: transparent; color: #666; border-bottom: 3px solid transparent; font-weight: 500; transition: all .15s; }
+  .tab-btn.active { color: #075E54; border-bottom-color: #25D366; background: #f8fffe; }
+  .tab-btn:hover:not(.active) { background: #f9f9f9; }
+  .panel { display: none; background: white; border: 1px solid #e0e0e0; border-radius: 0 0 12px 12px; padding: 24px; }
+  .panel.active { display: block; }
+
+  /* CATÁLOGO */
+  .toolbar { display: flex; gap: 10px; margin-bottom: 20px; }
+  .toolbar input { flex: 1; padding: 9px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+  .toolbar input:focus { outline: none; border-color: #25D366; }
+  .btn { padding: 9px 18px; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 500; border: none; transition: all .15s; }
+  .btn-green { background: #25D366; color: white; }
+  .btn-green:hover { background: #1ebe58; }
+  .btn-outline { background: white; border: 1px solid #ddd; color: #555; }
+  .btn-outline:hover { background: #f5f5f5; }
+  .btn-red { background: #ff4444; color: white; font-size: 12px; padding: 5px 10px; }
+  .btn-red:hover { background: #e03333; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; }
+  .card { border: 1px solid #e8e8e8; border-radius: 10px; overflow: hidden; transition: box-shadow .2s, border-color .2s; background: white; }
+  .card:hover { border-color: #25D366; box-shadow: 0 2px 12px rgba(37,211,102,.15); }
+  .card-img { width: 100%; height: 120px; object-fit: cover; display: block; background: #f5f5f5; }
+  .card-img-ph { width: 100%; height: 120px; background: linear-gradient(135deg, #e8f5e9, #f1f8ff); display: flex; align-items: center; justify-content: center; font-size: 40px; }
+  .card-body { padding: 10px 12px; }
+  .card-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-price { font-size: 13px; color: #25D366; font-weight: 600; margin-top: 3px; }
+  .card-kws { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 6px; }
+  .kwtag { font-size: 10px; background: #e8f9ee; color: #1a7a3f; padding: 2px 7px; border-radius: 20px; border: 1px solid #c8eeda; }
+  .card-footer { display: flex; gap: 6px; margin-top: 8px; align-items: center; }
+  .img-count { font-size: 11px; color: #999; margin-left: auto; }
+
+  .empty { text-align: center; padding: 50px 20px; color: #aaa; }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty p { font-size: 14px; }
+
+  /* FORMULÁRIO */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { margin-bottom: 16px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 5px; text-transform: uppercase; letter-spacing: .4px; }
+  input[type=text], textarea, select {
+    width: 100%; padding: 9px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;
+    color: #111; background: #fafafa; transition: border-color .15s;
+  }
+  input:focus, textarea:focus { outline: none; border-color: #25D366; background: white; }
+  textarea { resize: vertical; min-height: 72px; }
+
+  .upload-zone { border: 2px dashed #ccc; border-radius: 10px; padding: 28px 16px; text-align: center; cursor: pointer; transition: border-color .2s, background .2s; }
+  .upload-zone:hover { border-color: #25D366; background: #f0fff5; }
+  .upload-zone input { display: none; }
+  .upload-icon { font-size: 32px; margin-bottom: 8px; }
+  .upload-text { font-size: 14px; font-weight: 600; color: #333; }
+  .upload-sub { font-size: 12px; color: #999; margin-top: 4px; }
+  .previews { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .prev { position: relative; width: 72px; height: 72px; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }
+  .prev img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .prev-del { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%; background: rgba(0,0,0,.65); color: white; border: none; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; line-height: 1; }
+
+  .kw-input-row { display: flex; gap: 8px; }
+  .kw-input-row input { flex: 1; }
+  .kw-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; min-height: 28px; }
+  .kw-pill { display: inline-flex; align-items: center; gap: 4px; background: #e8f9ee; color: #1a7a3f; padding: 4px 10px; border-radius: 20px; font-size: 12px; border: 1px solid #c8eeda; }
+  .kw-pill button { background: none; border: none; color: #1a7a3f; cursor: pointer; font-size: 15px; padding: 0; line-height: 1; }
+
+  .form-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .form-actions .btn { flex: 1; padding: 11px; font-size: 15px; }
+
+  /* STATUS */
+  .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px; }
+  .status-card { border: 1px solid #e8e8e8; border-radius: 10px; padding: 16px; }
+  .status-card h3 { font-size: 12px; font-weight: 600; color: #777; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+  .status-val { font-size: 26px; font-weight: 700; color: #075E54; }
+  .status-ok { color: #25D366; font-size: 13px; font-weight: 500; }
+  .status-warn { color: #f59e0b; font-size: 13px; font-weight: 500; }
+
+  /* TOAST */
+  #toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 500; display: none; z-index: 9999; color: white; }
+  #toast.ok { background: #25D366; }
+  #toast.err { background: #e53e3e; }
+
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .topbar-stats { display: none; }
+    .status-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">
+    <span class="status-dot"></span>
+    CatálogoBot <span class="badge">PRO</span>
+  </div>
+  <div class="topbar-stats">
+    <div class="tstat"><div class="tstat-n" id="st-prod">0</div><div class="tstat-l">Produtos</div></div>
+    <div class="tstat"><div class="tstat-n" id="st-kw">0</div><div class="tstat-l">Palavras-chave</div></div>
+    <div class="tstat"><div class="tstat-n" id="st-foto">0</div><div class="tstat-l">Fotos</div></div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="mudarTab('catalogo', this)">📦 Catálogo</button>
+    <button class="tab-btn" onclick="mudarTab('cadastrar', this)">➕ Cadastrar Produto</button>
+    <button class="tab-btn" onclick="mudarTab('status', this)">⚙️ Status & Configuração</button>
+  </div>
+
+  <!-- CATÁLOGO -->
+  <div id="tab-catalogo" class="panel active">
+    <div class="toolbar">
+      <input id="busca" placeholder="🔍 Buscar por nome ou palavra-chave..." oninput="renderCatalogo()">
+      <button class="btn btn-green" onclick="mudarTab('cadastrar', document.querySelectorAll('.tab-btn')[1])">+ Novo produto</button>
+    </div>
+    <div id="grid-produtos" class="grid"></div>
+  </div>
+
+  <!-- CADASTRAR -->
+  <div id="tab-cadastrar" class="panel">
+    <div class="form-group full">
+      <label>📷 Fotos do produto (até 5 imagens)</label>
+      <div class="upload-zone" onclick="document.getElementById('input-fotos').click()">
+        <input type="file" id="input-fotos" multiple accept="image/*" onchange="carregarFotos(this)">
+        <div class="upload-icon">🖼️</div>
+        <div class="upload-text">Clique para selecionar fotos</div>
+        <div class="upload-sub">JPG, PNG ou WEBP — máx. 5MB cada</div>
+      </div>
+      <div class="previews" id="previews"></div>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Nome do produto *</label>
+        <input type="text" id="f-nome" placeholder="Ex: Tênis Air Max 2024">
+      </div>
+      <div class="form-group">
+        <label>Preço</label>
+        <input type="text" id="f-preco" placeholder="Ex: R$ 299,90">
+      </div>
+      <div class="form-group full">
+        <label>Descrição</label>
+        <textarea id="f-desc" placeholder="Ex: Disponível nos tamanhos 38-44, cores: preto e branco. Entrega em 3 dias."></textarea>
+      </div>
+      <div class="form-group full">
+        <label>🔑 Palavras-chave — o bot responde quando o cliente digitar estas palavras</label>
+        <div class="kw-input-row">
+          <input type="text" id="f-kw" placeholder="Ex: tênis, air max, calçado..." onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarKw()}">
+          <button class="btn btn-green" onclick="adicionarKw()">+ Adicionar</button>
+        </div>
+        <div class="kw-pills" id="kw-pills"></div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-outline" onclick="limparFormulario()">🗑 Limpar</button>
+      <button class="btn btn-green" onclick="salvarProduto()">💾 Salvar no Catálogo</button>
+    </div>
+  </div>
+
+  <!-- STATUS -->
+  <div id="tab-status" class="panel">
+    <div class="status-grid">
+      <div class="status-card">
+        <h3>Produtos cadastrados</h3>
+        <div class="status-val" id="s-prod">—</div>
+      </div>
+      <div class="status-card">
+        <h3>Palavras-chave ativas</h3>
+        <div class="status-val" id="s-kw">—</div>
+      </div>
+      <div class="status-card">
+        <h3>Fotos armazenadas</h3>
+        <div class="status-val" id="s-foto">—</div>
+      </div>
+      <div class="status-card">
+        <h3>WhatsApp API</h3>
+        <div id="s-wa">—</div>
+      </div>
+    </div>
+
+    <div style="background:#f8f8f8;border-radius:10px;padding:20px;font-size:13px;line-height:1.8">
+      <strong style="font-size:15px">🚀 Como ativar o bot no WhatsApp</strong><br><br>
+      1. Crie um app em <a href="https://developers.facebook.com/apps" target="_blank" style="color:#075E54">developers.facebook.com</a><br>
+      2. Ative o produto <strong>WhatsApp Business Platform</strong><br>
+      3. Copie o <strong>Phone Number ID</strong> e gere um <strong>Token de acesso</strong><br>
+      4. Configure as variáveis no arquivo <code>.env</code>:<br>
+      <pre style="background:#1a1a2e;color:#a8ff78;padding:12px;border-radius:8px;margin:10px 0;font-size:12px">WHATSAPP_TOKEN=seu_token_aqui
+PHONE_NUMBER_ID=seu_phone_id_aqui
+VERIFY_TOKEN=qualquer_palavra_secreta
+BASE_URL=https://seu-dominio.com
+PORT=3000</pre>
+      5. Registre o webhook: <code>https://seu-dominio.com/webhook</code><br>
+      6. Pronto! O bot responde 24h automaticamente 🎉
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+let fotasBase64 = [];
+let kwsAtuais = [];
+
+// ─── TABS ────────────────────────────────────────────────────────────
+function mudarTab(nome, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + nome).classList.add('active');
+  if (el) el.classList.add('active');
+  if (nome === 'catalogo') carregarCatalogo();
+  if (nome === 'status') carregarStatus();
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────
+function toast(msg, tipo = 'ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = tipo;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3000);
+}
+
+// ─── CATÁLOGO ────────────────────────────────────────────────────────
+let todosProdutos = [];
+
+async function carregarCatalogo() {
+  try {
+    const r = await fetch('/api/produtos');
+    const { produtos } = await r.json();
+    todosProdutos = produtos;
+    atualizarStats(produtos);
+    renderCatalogo();
+  } catch {
+    toast('Erro ao carregar catálogo.', 'err');
+  }
+}
+
+function atualizarStats(produtos) {
+  document.getElementById('st-prod').textContent = produtos.length;
+  document.getElementById('st-kw').textContent = produtos.reduce((a, p) => a + p.palavrasChave.length, 0);
+  document.getElementById('st-foto').textContent = produtos.reduce((a, p) => a + p.fotos.length, 0);
+}
+
+function renderCatalogo() {
+  const q = document.getElementById('busca').value.toLowerCase();
+  const grid = document.getElementById('grid-produtos');
+  const filtrados = todosProdutos.filter(p =>
+    p.nome.toLowerCase().includes(q) ||
+    p.palavrasChave.some(k => k.includes(q))
+  );
+
+  if (filtrados.length === 0) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1">
+      <div class="empty-icon">📦</div>
+      <p>${todosProdutos.length === 0 ? 'Nenhum produto cadastrado ainda.<br>Clique em <strong>+ Novo produto</strong> para começar!' : 'Nenhum produto encontrado para "<strong>' + q + '</strong>"'}</p>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = filtrados.map(p => `
+    <div class="card">
+      ${p.fotos.length > 0
+        ? `<img class="card-img" src="${p.fotos[0]}" alt="${p.nome}" onerror="this.style.display='none'">`
+        : `<div class="card-img-ph">📦</div>`}
+      <div class="card-body">
+        <div class="card-name" title="${p.nome}">${p.nome}</div>
+        <div class="card-price">${p.preco || '—'}</div>
+        <div class="card-kws">
+          ${p.palavrasChave.slice(0, 4).map(k => `<span class="kwtag">${k}</span>`).join('')}
+          ${p.palavrasChave.length > 4 ? `<span class="kwtag">+${p.palavrasChave.length - 4}</span>` : ''}
+        </div>
+        <div class="card-footer">
+          <button class="btn btn-red" onclick="excluirProduto('${p.id}')">Excluir</button>
+          <span class="img-count">${p.fotos.length} foto${p.fotos.length !== 1 ? 's' : ''}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function excluirProduto(id) {
+  if (!confirm('Excluir este produto?')) return;
+  try {
+    await fetch(`/api/produtos/${id}`, { method: 'DELETE' });
+    toast('Produto excluído!');
+    carregarCatalogo();
+  } catch {
+    toast('Erro ao excluir produto.', 'err');
+  }
+}
+
+// ─── UPLOAD FOTOS ────────────────────────────────────────────────────
+function carregarFotos(inp) {
+  const arquivos = Array.from(inp.files).slice(0, 5);
+  fotasBase64 = [];
+  const prev = document.getElementById('previews');
+  prev.innerHTML = '';
+
+  arquivos.forEach(f => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      fotasBase64.push(e.target.result);
+      const idx = fotasBase64.length - 1;
+      const div = document.createElement('div');
+      div.className = 'prev';
+      div.id = `prev-${idx}`;
+      div.innerHTML = `<img src="${e.target.result}"><button class="prev-del" onclick="removerFoto(${idx})">×</button>`;
+      prev.appendChild(div);
+    };
+    reader.readAsDataURL(f);
+  });
+}
+
+function removerFoto(idx) {
+  fotasBase64.splice(idx, 1);
+  document.getElementById(`prev-${idx}`)?.remove();
+}
+
+// ─── PALAVRAS-CHAVE ──────────────────────────────────────────────────
+function adicionarKw() {
+  const inp = document.getElementById('f-kw');
+  const v = inp.value.trim().toLowerCase();
+  if (!v || kwsAtuais.includes(v)) { inp.value = ''; return; }
+  kwsAtuais.push(v);
+  inp.value = '';
+  renderKwPills();
+}
+
+function removerKw(k) {
+  kwsAtuais = kwsAtuais.filter(x => x !== k);
+  renderKwPills();
+}
+
+function renderKwPills() {
+  document.getElementById('kw-pills').innerHTML = kwsAtuais.map(k =>
+    `<div class="kw-pill">${k}<button onclick="removerKw('${k}')">×</button></div>`
+  ).join('');
+}
+
+// ─── SALVAR PRODUTO ──────────────────────────────────────────────────
+async function salvarProduto() {
+  const nome = document.getElementById('f-nome').value.trim();
+  const preco = document.getElementById('f-preco').value.trim();
+  const desc = document.getElementById('f-desc').value.trim();
+
+  if (!nome) { toast('Informe o nome do produto!', 'err'); return; }
+  if (kwsAtuais.length === 0) { toast('Adicione pelo menos uma palavra-chave!', 'err'); return; }
+
+  try {
+    // Converte base64 em arquivos para enviar
+    const formData = new FormData();
+    formData.append('nome', nome);
+    formData.append('preco', preco);
+    formData.append('descricao', desc);
+    formData.append('palavrasChave', kwsAtuais.join(','));
+
+    // Converte dataURLs para Blob
+    for (let i = 0; i < fotasBase64.length; i++) {
+      const res = await fetch(fotasBase64[i]);
+      const blob = await res.blob();
+      formData.append('fotos', blob, `foto-${i}.jpg`);
+    }
+
+    const r = await fetch('/api/produtos', { method: 'POST', body: formData });
+    const data = await r.json();
+
+    if (!data.sucesso) throw new Error(data.erro);
+
+    toast('✅ Produto salvo com sucesso!');
+    limparFormulario();
+    mudarTab('catalogo', document.querySelectorAll('.tab-btn')[0]);
+  } catch (err) {
+    toast('Erro ao salvar: ' + err.message, 'err');
+  }
+}
+
+function limparFormulario() {
+  document.getElementById('f-nome').value = '';
+  document.getElementById('f-preco').value = '';
+  document.getElementById('f-desc').value = '';
+  document.getElementById('f-kw').value = '';
+  document.getElementById('previews').innerHTML = '';
+  document.getElementById('input-fotos').value = '';
+  kwsAtuais = [];
+  fotasBase64 = [];
+  renderKwPills();
+}
+
+// ─── STATUS ──────────────────────────────────────────────────────────
+async function carregarStatus() {
+  try {
+    const r = await fetch('/api/status');
+    const d = await r.json();
+    document.getElementById('s-prod').textContent = d.produtos;
+    document.getElementById('s-kw').textContent = d.palavrasChave;
+    document.getElementById('s-foto').textContent = d.fotos;
+    document.getElementById('s-wa').innerHTML = d.whatsappConfigurado
+      ? '<span class="status-ok">✅ Configurado e ativo</span>'
+      : '<span class="status-warn">⚠️ Token não configurado</span>';
+  } catch {
+    toast('Erro ao carregar status.', 'err');
+  }
+}
+
+// Inicializa
+carregarCatalogo();
+</script>
+</body>
+</html>
