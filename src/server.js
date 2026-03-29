@@ -114,8 +114,9 @@ app.get('/webhook', (req, res) => {
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
-console.log(`🔍 Webhook check — mode: ${mode}, token recebido: ${token}, token esperado: ${process.env.VERIFY_TOKEN}`);
-  if (mode === 'subscribe' && token === process.env.VERIFY_TOKEN) {
+const VERIFY = process.env.VERIFY_TOKEN || 'bot2000';
+console.log(`🔍 Webhook check — mode: ${mode}, token recebido: ${token}, token esperado: ${VERIFY}`);
+ if (mode === 'subscribe' && token === VERIFY) {
     console.log('✅ Webhook verificado pela Meta!');
     return res.status(200).send(challenge);
   }
